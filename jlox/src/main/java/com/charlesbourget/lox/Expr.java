@@ -1,13 +1,25 @@
 package com.charlesbourget.lox;
 
-import java.util.List;
-
 public interface Expr {
   interface Visitor<R> {
+    R visitAssignExpr(Assign expr);
+
     R visitBinaryExpr(Binary expr);
+
     R visitGroupingExpr(Grouping expr);
+
     R visitLiteralExpr(Literal expr);
+
     R visitUnaryExpr(Unary expr);
+
+    R visitVariableExpr(Variable expr);
+  }
+
+  record Assign(Token name, Expr value) implements Expr {
+    @Override
+    public <R> R accept(Visitor<R> visitor) {
+      return visitor.visitAssignExpr(this);
+    }
   }
 
   record Binary(Expr left, Token operator, Expr right) implements Expr {
@@ -35,6 +47,13 @@ public interface Expr {
     @Override
     public <R> R accept(Visitor<R> visitor) {
       return visitor.visitUnaryExpr(this);
+    }
+  }
+
+  record Variable(Token name) implements Expr {
+    @Override
+    public <R> R accept(Visitor<R> visitor) {
+      return visitor.visitVariableExpr(this);
     }
   }
 
