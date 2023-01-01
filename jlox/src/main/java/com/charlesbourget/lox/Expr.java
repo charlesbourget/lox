@@ -1,6 +1,8 @@
 package com.charlesbourget.lox;
 
 public interface Expr {
+  <R> R accept(Visitor<R> visitor);
+
   interface Visitor<R> {
     R visitAssignExpr(Assign expr);
 
@@ -9,6 +11,8 @@ public interface Expr {
     R visitGroupingExpr(Grouping expr);
 
     R visitLiteralExpr(Literal expr);
+
+    R visitLogicalExpr(Logical expr);
 
     R visitUnaryExpr(Unary expr);
 
@@ -43,6 +47,13 @@ public interface Expr {
     }
   }
 
+  record Logical(Expr left, Token operator, Expr right) implements Expr {
+    @Override
+    public <R> R accept(Visitor<R> visitor) {
+      return visitor.visitLogicalExpr(this);
+    }
+  }
+
   record Unary(Token operator, Expr right) implements Expr {
     @Override
     public <R> R accept(Visitor<R> visitor) {
@@ -56,6 +67,4 @@ public interface Expr {
       return visitor.visitVariableExpr(this);
     }
   }
-
-  <R> R accept(Visitor<R> visitor);
 }
