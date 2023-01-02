@@ -3,6 +3,8 @@ package com.charlesbourget.lox;
 import java.util.List;
 
 public interface Expr {
+  <R> R accept(Visitor<R> visitor);
+
   interface Visitor<R> {
     R visitAssignExpr(Assign expr);
 
@@ -19,6 +21,8 @@ public interface Expr {
     R visitLogicalExpr(Logical expr);
 
     R visitSetExpr(Set expr);
+
+    R visitSuperExpr(Super expr);
 
     R visitThisExpr(This expr);
 
@@ -83,6 +87,13 @@ public interface Expr {
     }
   }
 
+  record Super(Token keyword, Token method) implements Expr {
+    @Override
+    public <R> R accept(Visitor<R> visitor) {
+      return visitor.visitSuperExpr(this);
+    }
+  }
+
   record This(Token keyword) implements Expr {
     @Override
     public <R> R accept(Visitor<R> visitor) {
@@ -103,6 +114,4 @@ public interface Expr {
       return visitor.visitVariableExpr(this);
     }
   }
-
-  <R> R accept(Visitor<R> visitor);
 }

@@ -10,8 +10,8 @@ import java.util.Map;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     final Environment globals = new Environment();
-    private Environment environment = globals;
     private final Map<Expr, Integer> locals = new HashMap<>();
+    private Environment environment = globals;
 
     Interpreter() {
         globals.define("clock", new LoxCallable() {
@@ -88,7 +88,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 if (left instanceof Double && right instanceof Double) {
                     yield (double) left + (double) right;
                 } else if (left instanceof String && right instanceof String) {
-                    yield (String) left + (String) right;
+                    yield left + (String) right;
                 }
 
                 throw new RuntimeError(expr.operator(), "Operands must be two numbers or two strings.");
@@ -107,18 +107,16 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Object visitCallExpr(Expr.Call expr) {
-       Object callee = evaluate(expr.callee());
+        Object callee = evaluate(expr.callee());
 
-       List<Object> arguments = new ArrayList<>();
-       for (Expr argument : expr.arguments()) {
-           arguments.add(evaluate(argument));
-       }
+        List<Object> arguments = new ArrayList<>();
+        for (Expr argument : expr.arguments()) {
+            arguments.add(evaluate(argument));
+        }
 
-       if (!(callee instanceof LoxCallable)) {
-           throw new RuntimeError(expr.paren(), "Can only call functions and classes.");
-       }
-
-        LoxCallable function = (LoxCallable) callee;
+        if (!(callee instanceof LoxCallable function)) {
+            throw new RuntimeError(expr.paren(), "Can only call functions and classes.");
+        }
 
         if (arguments.size() != function.arity()) {
             throw new RuntimeError(expr.paren(), String.format("Expected %d arguments but go %d.", function.arity(), arguments.size()));
@@ -178,6 +176,20 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Object visitSuperExpr(Expr.Super expr) {
+        int distance = locals.get(expr);
+        LoxClass superclass = (LoxClass) environment.getAt(distance, "super");
+        LoxInstance object = (LoxInstance) environment.getAt(distance - 1, "this");
+        LoxFunction method = superclass.findMethod(expr.method().lexeme);
+
+        if (method == null) {
+            throw new RuntimeError(expr.method(), String.format("Undefined property '%s'.", expr.method().lexeme));
+        }
+
+        return method.bind(object);
+    }
+
+    @Override
     public Object visitThisExpr(Expr.This expr) {
         return lookUpVariable(expr.keyword(), expr);
     }
@@ -209,7 +221,21 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitClassStmt(Stmt.Class stmt) {
+        Object superclass = null;
+        if (stmt.superclass() != null) {
+            superclass = evaluate(stmt.superclass());
+
+            if (!(superclass instanceof LoxClass)) {
+                throw new RuntimeError(stmt.superclass().name(), "Superclass must be a class.");
+            }
+        }
+
         environment.define(stmt.name().lexeme, null);
+
+        if (stmt.superclass() != null) {
+            environment = new Environment(environment);
+            environment.define("super", superclass);
+        }
 
         Map<String, LoxFunction> methods = new HashMap<>();
         for (var method : stmt.methods()) {
@@ -217,7 +243,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             methods.put(method.name().lexeme, function);
         }
 
-        LoxClass klass = new LoxClass(stmt.name().lexeme, methods);
+        LoxClass klass = new LoxClass(stmt.name().lexeme, (LoxClass) superclass, methods);
+
+        if (superclass != null) {
+            environment = environment.enclosing;
+        }
+
         environment.assign(stmt.name(), klass);
 
         return null;
