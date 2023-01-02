@@ -477,6 +477,9 @@ public class Parser {
                 case CLASS, FUN, VAR, FOR, IF, WHILE, PRINT, RETURN -> {
                     return;
                 }
+                default -> {
+                    // continue
+                }
             }
 
             advance();
