@@ -1,7 +1,3 @@
-//
-// Created by Charles Bourget on 2023-01-02.
-//
-
 #ifndef CLOX_COMMON_H
 #define CLOX_COMMON_H
 
