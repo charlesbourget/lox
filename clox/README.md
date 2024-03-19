@@ -4,26 +4,25 @@ Lox bytecode interpreter written in C.
 
 ## How to execute
 
-1. You will need:
-- cmake
-- ninja
-- clang
-  
-2. Generate build files:
+You will need:
 
-```bash
-cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -B ./build
+- [zig](https://ziglang.org/)
+
+Build the project (debug):
+
+```
+zig build
 ```
 
-3. Build executable
+Run the binary:
 
-```bash
-cd build
-ninja
+```
+zig build run
 ```
 
-3. Run project
+Build the project (release):
 
-```bash
-./clox
 ```
+zig build -O ReleaseFast
+```
+
